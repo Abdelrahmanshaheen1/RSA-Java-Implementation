@@ -1,6 +1,44 @@
-# RSA Encryption — Java Implementation from Scratch
+<div align="center">
 
-A from-scratch RSA implementation in Java using `BigInteger` — no external crypto libraries — covering key generation, encryption, and decryption at the byte level.
+# RSA in Java, from scratch
+
+**Key generation, textbook RSA, and RSAES-OAEP (RFC 8017), built on `BigInteger.modPow` only.**
+The OAEP padding is checked against the JDK's own implementation in both directions.
+
+[![Build and test](https://github.com/Abdelrahmanshaheen1/RSA-Java-Implementation/actions/workflows/test.yml/badge.svg)](https://github.com/Abdelrahmanshaheen1/RSA-Java-Implementation/actions/workflows/test.yml)
+![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)
+![Checks](https://img.shields.io/badge/checks-19-2ea043)
+![Dependencies](https://img.shields.io/badge/dependencies-none-8a3ffc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+</div>
+
+## At a glance
+
+| | |
+|---|---|
+| **Textbook RSA** | Per-byte encrypt/decrypt, kept simple so every step is visible. Deterministic, so deliberately *not* secure |
+| **RSA-OAEP** | SHA-256 + MGF1, random seed per message, one generic error for any bad ciphertext |
+| **Interop** | Encrypts with this code and decrypts with the JDK's `RSA/ECB/OAEPPadding`, and the reverse, on the same key |
+| **Run it** | `javac *.java && echo "512" \| java Main` |
+| **Test it** | `java RSATest` (19 checks, no test framework) |
+
+## Contents
+
+[How the pieces fit](#how-the-pieces-fit) · [What it does](#what-it-does) · [Why textbook RSA fails, and what OAEP adds](#why-the-per-byte-scheme-is-not-secure-and-what-rsaoaep-adds) · [Run it](#run-it) · [Fixes made](#fixes-made-while-adding-the-tests) · [Limitations](#limitations) · [Layout](#repository-layout)
+
+## How the pieces fit
+
+```mermaid
+flowchart LR
+    K["RSAKeyPair<br/>p, q, n, e = 65537, d"] --> T["RSAEncryption<br/>textbook, per byte"]
+    K --> O["RSAOAEP<br/>RFC 8017, SHA-256 + MGF1"]
+    O -. "interop check" .-> J["JDK RSA/ECB/OAEPPadding"]
+    T --> M["Main demo<br/>original.txt to encrypted.txt to decrypted.txt"]
+    X["RSATest<br/>19 checks"] --> K
+    X --> T
+    X --> O
+```
 
 ## What it does
 
@@ -41,6 +79,28 @@ GitHub Actions runs the same commands on every push.
 - `RSAEncryption.decrypt` turned each decrypted byte into a `char`, which corrupts any non-ASCII text (for example `café`), and threw `NumberFormatException` on an empty line. It now collects the bytes and decodes them as UTF-8.
 - `original.txt` was missing, so `java Main` failed on a fresh clone. A small sample file is included.
 
-## Skills demonstrated
+## Limitations
 
-Public-key cryptography implemented from first principles — modular exponentiation, modular inverse, probable-prime generation — rather than just calling a library, which is the useful part for understanding *why* RSA is secure and where it breaks (the per-byte scheme above), plus implementing and interop-testing the padding scheme that fixes it. Still an educational implementation: no constant-time arithmetic and no CRT optimisation, so do not use it to protect real data.
+An educational implementation. Do not use it to protect real data.
+
+- No constant-time arithmetic, so it is open to timing attacks.
+- No CRT speed-up for decryption.
+- Prime generation uses `BigInteger.probablePrime`, which is probabilistic (with a negligible error probability).
+- OAEP carries only short messages (62 bytes per block at 1024 bits); real systems encrypt a symmetric key with RSA and the data with a symmetric cipher.
+
+## Repository layout
+
+```text
+.
+├── RSAKeyPair.java      # key generation
+├── RSAEncryption.java   # textbook per-byte scheme and file helpers
+├── RSAOAEP.java         # RSAES-OAEP (RFC 8017)
+├── Main.java            # demo: original.txt -> encrypted.txt -> decrypted.txt
+├── RSATest.java         # 19 checks, no framework
+├── original.txt         # sample input for the demo
+└── .github/workflows/test.yml
+```
+
+## License
+
+[MIT](LICENSE) © 2026 Abdelrahman Shaheen
