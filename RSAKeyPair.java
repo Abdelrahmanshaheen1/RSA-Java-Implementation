@@ -22,17 +22,21 @@ public class RSAKeyPair {
         //generate two large prime numbers
         Random random = new SecureRandom();
         int bitLength = keyLength / 2; //bysplit el key length between p and q
-        
-        p = BigInteger.probablePrime(bitLength, random);
-        q = BigInteger.probablePrime(bitLength, random);
-        
-        //calculates n and phi
-        n = p.multiply(q);
-        phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
-        
+
         //chooses public exponent e
         e = BigInteger.valueOf(65537);
-        
+
+        //retry until the key is usable: p != q, n has exactly keyLength bits, and
+        //gcd(e, phi) = 1 (otherwise e has no inverse and modInverse throws)
+        do {
+            p = BigInteger.probablePrime(bitLength, random);
+            q = BigInteger.probablePrime(keyLength - bitLength, random);
+
+            //calculates n and phi
+            n = p.multiply(q);
+            phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
+        } while (p.equals(q) || n.bitLength() != keyLength || !e.gcd(phi).equals(BigInteger.ONE));
+
         //calculates private exponent d
         d = e.modInverse(phi);
     }

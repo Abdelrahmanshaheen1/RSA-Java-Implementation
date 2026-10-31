@@ -22,19 +22,21 @@ public class RSAEncryption {
     }
 
     public static String decrypt(String encrypted, BigInteger n, BigInteger d) {
-        StringBuilder decrypted = new StringBuilder();
+        //collect the decrypted bytes and decode them as UTF-8 at the end
+        //(casting each byte to a char only works for plain ASCII)
+        ByteArrayOutputStream decrypted = new ByteArrayOutputStream();
         //bysplit el encrypted string to individual encrypted numbers
-        String[] numbers = encrypted.split(" ");
-        
-        for (String number : numbers) {
+        for (String number : encrypted.trim().split("\\s+")) {
+            if (number.isEmpty()) {
+                continue; //empty line -> empty message
+            }
             //converts string to BigInteger
             BigInteger c = new BigInteger(number);
             BigInteger m = c.modPow(d, n);
-            //byconvert el decrypted number le a character then appends to result
-            decrypted.append((char) m.intValue());
+            decrypted.write(m.intValue());
         }
-        
-        return decrypted.toString();
+
+        return new String(decrypted.toByteArray(), StandardCharsets.UTF_8);
     }
 
     public static void encryptFile(String inputFile, String outputFile, BigInteger n, BigInteger e) throws IOException {

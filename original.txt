@@ -1,0 +1,2 @@
+RSA turns a message into a number and raises it to a power modulo n.
+Only the holder of the private exponent d can undo that.
